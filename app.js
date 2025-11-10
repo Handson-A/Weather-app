@@ -20,6 +20,61 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  const unitsCustom = document.getElementById('units-custom');
+  if (unitsCustom) {
+    const customList = unitsCustom.querySelector('.custom-select-list');
+    const customLabel = unitsCustom.querySelector('.custom-select-label');
+
+    // populate from native select options
+    Array.from(unitsSelect.options).forEach(opt => {
+      const li = document.createElement('li');
+      li.textContent = opt.textContent;
+      li.dataset.value = opt.value;
+      li.tabIndex = -1;
+      if (opt.value === unitsSelect.value) {
+        li.setAttribute('aria-selected', 'true');
+        customLabel.textContent = opt.textContent;
+      }
+      customList.appendChild(li);
+
+      li.addEventListener('click', () => {
+        // update native select which triggers the existing change handler
+        unitsSelect.value = li.dataset.value;
+        unitsSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        Array.from(customList.children).forEach(ch => ch.setAttribute('aria-selected', 'false'));
+        li.setAttribute('aria-selected', 'true');
+        customList.hidden = true;
+        unitsCustom.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    if (!unitsCustom.dataset.inited) {
+      unitsCustom.addEventListener('click', () => {
+        const expanded = unitsCustom.getAttribute('aria-expanded') === 'true';
+        if (expanded) { customList.hidden = true; unitsCustom.setAttribute('aria-expanded', 'false'); }
+        else { customList.hidden = false; unitsCustom.setAttribute('aria-expanded', 'true'); const selItem = customList.querySelector('[aria-selected="true"]'); if (selItem) selItem.focus(); }
+      });
+
+      unitsCustom.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); unitsCustom.click(); }
+        else if (ev.key === 'ArrowDown') { ev.preventDefault(); customList.hidden = false; unitsCustom.setAttribute('aria-expanded','true'); const first = customList.querySelector('li'); if (first) first.focus(); }
+        else if (ev.key === 'ArrowUp') { ev.preventDefault(); customList.hidden = false; unitsCustom.setAttribute('aria-expanded','true'); const items = customList.querySelectorAll('li'); if (items.length) items[items.length-1].focus(); }
+        else if (ev.key === 'Escape') { customList.hidden = true; unitsCustom.setAttribute('aria-expanded','false'); }
+      });
+
+      customList.addEventListener('keydown', (ev) => {
+        const focused = document.activeElement;
+        if (ev.key === 'ArrowDown') { ev.preventDefault(); const next = focused.nextElementSibling || customList.querySelector('li'); if (next) next.focus(); }
+        else if (ev.key === 'ArrowUp') { ev.preventDefault(); const prev = focused.previousElementSibling || customList.querySelector('li:last-child'); if (prev) prev.focus(); }
+        else if (ev.key === 'Enter') { ev.preventDefault(); focused.click(); }
+        else if (ev.key === 'Escape') { customList.hidden = true; unitsCustom.setAttribute('aria-expanded','false'); unitsCustom.focus(); }
+      });
+
+      document.addEventListener('click', (e) => { if (!unitsCustom.contains(e.target)) { customList.hidden = true; unitsCustom.setAttribute('aria-expanded','false'); } });
+      unitsCustom.dataset.inited = '1';
+    }
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = q.value.trim();
@@ -34,7 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const {latitude, longitude, name: placeName, country} = geo;
         document.getElementById('current-location').textContent = `${placeName}, ${country}`;
         document.getElementById('current-location').dataset.coords = `${latitude},${longitude}`;
-        // pass placeName/country so fetchAndRender can persist and avoid extra reverse lookups
         await fetchAndRender(latitude, longitude, placeName, country);
       }
     } catch (err) {
@@ -61,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
   );
 } else {
   // no geolocation API: fallback
-  q.value = 'Accra';
+  q.value = 'Accra, Ghana';
   form.requestSubmit();
 }
 });
@@ -93,8 +147,7 @@ async function fetchAndRender(lat, lon, placeName = null, country = null) {
   if (!res.ok) throw new Error('Weather fetch failed');
   const data = await res.json();
 
-  // Ensure we have a human-readable place name to show. Use provided values first,
-  // then fall back to stored info, then try reverse geocoding.
+
   try {
     let stored = null;
     try { stored = JSON.parse(localStorage.getItem('weather_last') || 'null'); } catch(e) { stored = null; }
@@ -103,8 +156,8 @@ async function fetchAndRender(lat, lon, placeName = null, country = null) {
       country = stored.country;
     }
     if (!placeName) {
-      // Try reverse geocoding to get a name for the coordinates.
-      // Show a small, non-blocking loader in the UI while this runs.
+      // attempt reverse geocoding to get place name
+
       try {
         showLocationLoader(true);
         const rev = await reverseGeocode(lat, lon);
@@ -113,7 +166,7 @@ async function fetchAndRender(lat, lon, placeName = null, country = null) {
           country = rev.country || country;
         }
       } catch (e) {
-        // ignore reverse geocode errors; we'll still render numeric coords if needed
+        // ignore reverse geocode errors; still render numeric coordinates if needed
         console.warn('reverse geocode failed', e);
       } finally {
         showLocationLoader(false);
@@ -121,12 +174,17 @@ async function fetchAndRender(lat, lon, placeName = null, country = null) {
     }
 
     // caching (include place name when available)
+    if (!placeName) {
+      // fallback friendly label when reverse geocoding didn't yield a name
+      placeName = 'Your location';
+      country = country || '';
+    }
     localStorage.setItem('weather_last', JSON.stringify({lat, lon, placeName, country}));
   } catch (e) {
     console.warn('storing last weather failed', e);
   }
 
-  // Ensure the location label in the UI is updated (may have been set earlier by geocode)
+
   try {
     const locEl = document.getElementById('current-location');
     if (locEl) {
@@ -142,14 +200,14 @@ async function fetchAndRender(lat, lon, placeName = null, country = null) {
   renderHourlyForSelectedDay(data, units);
 }
 
-// Reverse geocode to obtain a place name from coordinates (uses Open-Meteo reverse endpoint)
+// Reverse geocode to obtain a place name from coordinates (use Open-Meteo reverse endpoint)
 async function reverseGeocode(lat, lon) {
   try {
     const url = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('Reverse geocoding failed');
     const data = await res.json();
-    // API returns 'name' and 'country' in the top-level object or in results[0]
+  
     if (data && data.name) return { name: data.name, country: data.country };
     if (data && data.results && data.results.length) {
       const r = data.results[0];
@@ -176,7 +234,7 @@ function renderCurrent(data, units) {
   // current_weather has temperature and windspeed
   tempEl.textContent = formatTemp(cur.temperature, units);
   iconEl.textContent = weatherCodeToEmoji(cur.weathercode);
-  dateEl.textContent = new Date(cur.time).toLocaleString();
+  dateEl.textContent = new Date(cur.time).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
 
   // find index of current time 
   // find the closest hourly index to the current time 
@@ -231,15 +289,120 @@ function findClosestIndex(timeArray, targetIso) {
 
 function setupHourlyDaySelector(data) {
   const sel = document.getElementById('hourly-day-select');
+  const custom = document.getElementById('hourly-day-custom');
+  const list = custom.querySelector('.custom-select-list');
+  const label = custom.querySelector('.custom-select-label');
+
+  // clear both native select and custom list
   sel.innerHTML = '';
+  list.innerHTML = '';
+
   const dates = Array.from(new Set(data.daily.time.map(t => t)));
   dates.forEach((d, i) => {
+    const pretty = new Date(d).toLocaleDateString(undefined,{weekday:'long', month:'short', day:'numeric'});
+    // native option (hidden, kept for accessibility)
     const opt = document.createElement('option');
     opt.value = d;
-    opt.textContent = new Date(d).toLocaleDateString(undefined,{weekday:'long', month:'short', day:'numeric'});
+    opt.textContent = pretty;
     sel.appendChild(opt);
+
+    // custom list item
+    const li = document.createElement('li');
+    li.setAttribute('role','option');
+    li.dataset.value = d;
+    li.tabIndex = -1;
+    li.textContent = pretty;
+    list.appendChild(li);
+
+    li.addEventListener('click', () => {
+      // set native select value and trigger render
+      sel.value = d;
+      // update list aria-selected
+      Array.from(list.children).forEach(ch => ch.setAttribute('aria-selected','false'));
+      li.setAttribute('aria-selected','true');
+      label.textContent = pretty;
+      // close list
+      list.hidden = true;
+      custom.setAttribute('aria-expanded','false');
+      renderHourlyForSelectedDay(data, localStorage.getItem('weather_units')||'metric');
+    });
   });
+
+  // initial selection: first day
+  if (dates.length) {
+    sel.value = dates[0];
+    const first = list.querySelector('li');
+    if (first) {
+      first.setAttribute('aria-selected','true');
+      first.tabIndex = 0;
+      label.textContent = first.textContent;
+    }
+  }
+
+  // ensure native select change still renders (keeps compatibility)
   sel.addEventListener('change', () => renderHourlyForSelectedDay(data, localStorage.getItem('weather_units')||'metric'));
+
+  // Basic interactions for the custom element (toggle, keyboard, close-on-outside-click)
+  if (!custom.dataset.inited) {
+    custom.addEventListener('click', (e) => {
+      const expanded = custom.getAttribute('aria-expanded') === 'true';
+      if (expanded) {
+        list.hidden = true;
+        custom.setAttribute('aria-expanded','false');
+      } else {
+        list.hidden = false;
+        custom.setAttribute('aria-expanded','true');
+        // focus selected item
+        const selItem = list.querySelector('[aria-selected="true"]');
+        if (selItem) selItem.focus();
+      }
+    });
+
+    // keyboard handling
+    custom.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ' ) {
+        ev.preventDefault();
+        custom.click();
+      } else if (ev.key === 'ArrowDown') {
+        ev.preventDefault();
+        // open and focus first
+        list.hidden = false; custom.setAttribute('aria-expanded','true');
+        const first = list.querySelector('li'); if (first) first.focus();
+      } else if (ev.key === 'ArrowUp') {
+        ev.preventDefault(); list.hidden = false; custom.setAttribute('aria-expanded','true');
+        const items = list.querySelectorAll('li'); if (items.length) items[items.length-1].focus();
+      } else if (ev.key === 'Escape') {
+        list.hidden = true; custom.setAttribute('aria-expanded','false');
+      }
+    });
+
+    // delegate keyboard navigation inside the list
+    list.addEventListener('keydown', (ev) => {
+      const focused = document.activeElement;
+      if (ev.key === 'ArrowDown') {
+        ev.preventDefault();
+        const next = focused.nextElementSibling || list.querySelector('li');
+        if (next) next.focus();
+      } else if (ev.key === 'ArrowUp') {
+        ev.preventDefault();
+        const prev = focused.previousElementSibling || list.querySelector('li:last-child');
+        if (prev) prev.focus();
+      } else if (ev.key === 'Enter') {
+        ev.preventDefault(); focused.click();
+      } else if (ev.key === 'Escape') {
+        list.hidden = true; custom.setAttribute('aria-expanded','false'); custom.focus();
+      }
+    });
+
+    // click outside to close
+    document.addEventListener('click', (e) => {
+      if (!custom.contains(e.target)) {
+        list.hidden = true; custom.setAttribute('aria-expanded','false');
+      }
+    });
+
+    custom.dataset.inited = '1';
+  }
 }
 
 function renderHourlyForSelectedDay(data, units) {

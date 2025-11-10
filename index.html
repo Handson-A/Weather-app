@@ -9,13 +9,7 @@
   <title>Frontend Mentor - Weather app</title>
 
   <link rel="stylesheet" href="styles.css">
-  <style>
-    .attribution { font-size: 11px; text-align: center; }
-    .attribution a { color: hsl(228, 45%, 44%); }
-  </style>
-</head>
-<body>
-
+  </link>
 </head>
 <body>
 
@@ -28,7 +22,13 @@
 
       <div class="controls">
         <label for="units" class="visually-hidden">Units</label>
-        <select id="units" aria-label="Choose units">
+        <!-- Visible custom units control (dark-styled) + hidden native select for accessibility -->
+        <div id="units-custom" class="custom-select-small" role="combobox" aria-label="Choose units" aria-haspopup="listbox" aria-expanded="false" tabindex="0">
+          <span class="custom-select-label">Metric (°C, km/h, mm)</span>
+          <span class="custom-select-arrow" aria-hidden="true">▾</span>
+          <ul class="custom-select-list" role="listbox" hidden></ul>
+        </div>
+        <select id="units" aria-label="Choose units" class="visually-hidden">
           <option value="metric">Metric (°C, km/h, mm)</option>
           <option value="imperial">Imperial (°F, mph, in)</option>
         </select>
@@ -36,8 +36,8 @@
     </div>
   </header>
 
-  <main class="container main-grid">
-    <section class="search-section">
+  <main class="container">
+    <div class="top-area">
       <h1 class="page-title">How's the sky looking today?</h1>
 
       <form id="search-form" class="search-form" aria-label="Search for a city">
@@ -45,20 +45,24 @@
         <input id="q" name="q" type="search" placeholder="Search for a place, e.g., Tamale, Ghana" required>
         <button type="submit">Search</button>
       </form>
+    </div>
 
-      <div class="weather-card" id="current-card" aria-live="polite">
-        <div class="current-left">
-          <div class="location" id="current-location">—
-            <span id="location-loader" class="location-loader" aria-hidden="true" title="Locating" hidden></span>
+    <div class="content-grid">
+      <section class="left-column">
+        <div class="weather-card" id="current-card" aria-live="polite">
+          <div class="current-left">
+            <div class="location" id="current-location">—
+              <span id="location-loader" class="location-loader" aria-hidden="true" title="Locating" hidden></span>
+            </div>
+            <div class="current-date" id="current-date">—</div>
           </div>
-          <div class="current-date" id="current-date">—</div>
           <div class="current-metrics">
-            <div class="temp" id="current-temp">—</div>
             <div class="icon" id="current-icon" aria-hidden="true">☀️</div>
+            <div class="temp" id="current-temp">—</div>
           </div>
         </div>
 
-        <div class="current-right">
+        <div class="current-down">
           <div class="small-metrics">
             <div><strong>Feels like</strong><div id="feels-like">—</div></div>
             <div><strong>Humidity</strong><div id="humidity">—</div></div>
@@ -66,36 +70,39 @@
             <div><strong>Precipitation</strong><div id="precipitation">—</div></div>
           </div>
         </div>
-      </div>
 
-      <section class="daily-forecast">
-        <h2>Daily forecast</h2>
-        <div id="daily" class="daily-grid" role="list">
-          <!--to be populated-->
-        </div>
+        <section class="daily-forecast">
+          <h2>Daily forecast</h2>
+          <div id="daily" class="daily-grid" role="list">
+            <!--to be populated-->
+          </div>
+        </section>
       </section>
-    </section>
 
-    <aside class="hourly-aside">
-      <div class="hourly-header">
-        <h2>Hourly forecast</h2>
-        <select id="hourly-day-select" aria-label="Select day for hourly forecast"></select>
-      </div>
+      <aside class="hourly-aside">
+        <div class="hourly-header">
+          <h2>Hourly forecast</h2>
+         
+          <div id="hourly-day-custom" class="custom-select" role="combobox" aria-label="Select day for hourly forecast" aria-haspopup="listbox" aria-expanded="false" tabindex="0">
+            <span class="custom-select-label">Select day</span>
+            <span class="custom-select-arrow" aria-hidden="true">▾</span>
+            <ul class="custom-select-list" role="listbox" hidden></ul>
+          </div>
+          <select id="hourly-day-select" aria-label="Select day for hourly forecast" aria-hidden="true" class="visually-hidden"></select>
+        </div>
 
-      <div id="hourly" class="hourly-list" role="list">
-        <!-- to be populated-->
-      </div>
-    </aside>
+        <div id="hourly" class="hourly-list" role="list">
+          <!-- to be populated-->
+        </div>
+      </aside>
+    </div>
   </main>
 
   <footer class="attribution">
-    Challenge by <a href="https://www.frontendmentor.io?ref=challenge">Frontend Mentor</a>.
+    Challenge from <a href="https://www.frontendmentor.io?ref=challenge">Frontend Mentor</a>.
     Coded by <a href="#">Ayelson</a>.
   </footer>
 
   <script src="app.js" defer></script>
-</body>
-</html>
-</html>
 </body>
 </html>

@@ -1,0 +1,297 @@
+
+:root{
+  --bg:#0b1020;
+  --card:#0f1724;
+  --muted:#9aa3b2;
+  --accent:#636dfd;
+  --radius:12px;
+  --max-width:1200px;
+  --gap:18px;
+  --text:#e6eef8;
+}
+/* Local fonts from assets/fonts */
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('./assets/fonts/Bricolage_Grotesque/BricolageGrotesque-VariableFont_opsz,wdth,wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('./assets/fonts/Bricolage_Grotesque/static/BricolageGrotesque-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  src: url('./assets/fonts/DM_Sans/DMSans-VariableFont_opsz,wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DM Sans';
+  src: url('./assets/fonts/DM_Sans/static/DMSans-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DM Sans';
+  src: url('./assets/fonts/DM_Sans/static/DMSans-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+
+body{
+  margin:0;
+  
+  font-family: 'DM Sans', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  -webkit-font-smoothing:antialiased;
+  background: linear-gradient(180deg, #797c7e 40%, #f6f8fb 60%);
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+
+
+h1, h2, h3, .page-title {
+  font-family: 'Bricolage Grotesque', 'DM Sans', system-ui, sans-serif;
+  letter-spacing: -0.6px;
+}
+
+h1 {
+  font-size: 48px;
+  line-height: 1.02;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.4px;
+}
+.container{
+  max-width:var(--max-width);
+  margin:28px auto;
+  padding:0 20px;
+}
+.header-inner{display:flex;flex-direction:row;align-items:flex-start;justify-content:space-between;gap:10px}
+.brand{display:flex;gap:10px;align-items:center}
+.brand-name{font-weight:700}
+.site-header{margin:10px 0 18px}
+.location{display:inline-flex;align-items:center;gap:8px}
+.location-loader{width:14px;height:14px;border:2px solid rgba(255,255,255,0.15);border-top-color:var(--accent);border-radius:50%;display:inline-block;vertical-align:middle}
+.location-loader[hidden]{display:none}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.location-loader.active{animation:spin 1s linear infinite}
+.visually-hidden{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}
+.main-grid{display:grid;grid-template-columns:1fr 340px;gap:var(--gap);align-items:start}
+@media(max-width:900px){.main-grid{grid-template-columns:1fr}}
+
+/* Top area (title + search) centered across the panel */
+.top-area{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:10px 0 20px}
+.top-area .page-title{text-align:center}
+.search-form{justify-content:center}
+.search-form input{min-width:500px;max-width:700px}
+
+/* Content grid beneath the top area: left content + right hourly aside */
+.content-grid{display:grid;grid-template-columns:1fr 340px;gap:28px;align-items:start}
+.left-column{min-width:0}
+.search-section{margin-top:18px}
+.page-title{font-family:'Bricolage Grotesque', 'DM Sans', system-ui; font-size:48px;margin:6px 0 12px;letter-spacing:-0.6px;line-height:1.02;font-weight:700}
+.search-form{display:flex;gap:10px}
+.search-form input{flex:1;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:var(--text)}
+.search-form button{padding:12px 16px;border-radius:8px;border:none;background:var(--accent);color:white;cursor:pointer}
+.weather-card{display:flex;justify-content:space-between;padding:18px;border-radius:var(--radius);background:linear-gradient(90deg,#2b3a85 0%, #5b3cff 100%);margin-top:10px;color:white}
+.current-left{flex:1; margin-top: 2rem; font-size: larger;}
+.current-down{min-width:260px; margin-top: 1rem;}
+.current-metrics{display:flex;align-items:center;gap:10px;}
+.temp{font-size:48px;font-weight:700}
+.small-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.small-metrics div{background:rgba(255,255,255,0.04);padding:10px;border-radius:8px}
+.daily-forecast{margin-top:18px}
+.daily-grid{display:flex;gap:10px;overflow:auto;padding:8px 0}
+.daily-item{min-width:80px;background:rgba(255,255,255,0.03);padding:10px;border-radius:8px;text-align:center}
+.hourly-aside{margin-top:10px}
+.hourly-header{display:flex;justify-content:space-between;align-items:center}
+.hourly-list{margin-top:12px;display:flex;flex-direction:column;gap:8px;}
+.hourly-item{display:flex;justify-content:space-between;padding:10px;border-radius:8px;background:rgba(255,255,255,0.02)}
+.attribution{opacity:0.9;text-align:center;margin:28px 0;color:var(--muted); border-top:1px solid rgba(8, 8, 8, 0.1);padding-top:18px; }
+a{color:var(--accent)}
+/* responsiveness*/
+@media(max-width:480px){.temp{font-size:36px}.current-right{display:none}}
+
+
+
+.container{
+  max-width:1200px;
+  margin:0 auto;
+  background: linear-gradient(180deg,#060617 0%, #0b1020 100%);
+  border-radius:18px;
+  box-shadow: 0 18px 40px rgba(3,10,25,0.6);
+  padding:28px 36px;
+  color:var(--text);
+}
+.site-header{margin:0 0 18px}
+.brand-name{font-weight:700;color:#fff}
+
+.page-title{font-size:48px;line-height:1.02;margin:6px 0 20px;text-align:center;font-weight:700;color:#ffffff;letter-spacing:-0.6px}
+
+.search-form{display:flex;gap:12px;margin-bottom:22px}
+.search-form input{
+  padding:16px 18px;border-radius:12px;border:none;background:rgba(255,255,255,0.03);color:var(--text);font-size:16px;box-shadow: inset 0 -1px 0 rgba(255,255,255,0.02);
+}
+.search-form input::placeholder{color:rgba(230,238,248,0.45)}
+.search-form button{background:linear-gradient(180deg,#5561ff,#6f6cff);padding:12px 20px;border-radius:12px;border:none;color:white;font-weight:600}
+
+.main-grid{grid-template-columns:1fr 340px;gap:28px}
+
+.weather-card{padding:28px;border-radius:16px;background:linear-gradient(90deg,#4a49d8 0%, #6f5bff 100%);box-shadow: inset 0 -6px 30px rgba(0,0,0,0.15);min-height:170px}
+.current-left{padding-right:12px}
+.current-down{min-width:300px}
+.current-date{color:rgba(230,238,248,0.8);margin-bottom:8px}
+.temp{font-size:64px}
+.icon{font-size:28px;margin-left:8px}
+
+.small-metrics{grid-template-columns:repeat(4,1fr);gap:14px}
+.small-metrics div{background:rgba(255,255,255,0.03);padding:14px;border-radius:10px}
+.small-metrics strong{display:block;color:rgba(230,238,248,0.75);font-weight:600;margin-bottom:6px}
+
+.hourly-aside{background:rgba(255,255,255,0.02);padding:18px;border-radius:14px;color:rgba(230,238,248,0.95)}
+.hourly-header h2{margin:0;color:#fff}
+.hourly-list{max-height:360px;overflow:auto;padding-right:6px}
+.hourly-list{
+  scrollbar-width: thin; 
+  scrollbar-color: rgba(117, 117, 119, 0.95) rgba(0,0,0,0.25);
+}
+/* WebKit browsers */
+.hourly-list::-webkit-scrollbar{width:10px}
+.hourly-list::-webkit-scrollbar-track{background:rgba(0,0,0,0.18);border-radius:10px}
+.hourly-list::-webkit-scrollbar-thumb{
+  background: rgba(41, 62, 63, 0.95);
+  border-radius:10px;
+  border: 2px solid rgba(0,0,0,0.12);
+}
+.hourly-list::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,1)}
+.hourly-item{background:rgba(255,255,255,0.02);padding:12px;border-radius:10px}
+.hour-right .hour-temp{font-weight:600}
+
+.daily-grid{margin-top:16px}
+.daily-item{min-width:72px;padding:12px;border-radius:10px;background:rgba(255,255,255,0.02);box-shadow:0 6px 18px rgba(8,12,30,0.4)}
+
+/* Units select styling */
+#units{background:rgba(255,255,255,0.03);color:var(--text);border-radius:10px;padding:8px 10px;border:none}
+
+/* Modernize hourly day select to match the design (rounded, subtle border, custom caret) */
+#hourly-day-select{
+  appearance:none;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  background-color: rgba(255,255,255,0.03);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 6px 36px 6px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height:1;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 14px;
+}
+#hourly-day-select:focus{outline:none;box-shadow:0 0 0 4px rgba(85,97,255,0.12);border-color:rgba(85,97,255,0.6)}
+
+/* Ensure the select sits nicely in the header */
+.hourly-header{display:flex;align-items:center;gap:12px}
+
+/* Style native dropdown options to match dark theme where supported */
+#hourly-day-select option{
+  background: linear-gradient(180deg, rgba(8,10,18,0.98), rgba(6,6,11,0.98));
+  color: var(--text);
+  padding: 8px 10px;
+}
+
+/* For WebKit browsers to ensure the select text is visible */
+#hourly-day-select{color:var(--text);-webkit-text-fill-color:var(--text)}
+
+/* On some platforms the native menu still shows a light background; apply a forced dark appearance for Windows/Chromium */
+select::-ms-expand{display:none}
+
+/* smaller screen adjustments */
+@media(max-width:900px){
+  .container{padding:20px}
+  .page-title{text-align:center;font-size:28px}
+  .main-grid{grid-template-columns:1fr}
+  .hourly-aside{order:3;margin-top:18px}
+  .weather-card{flex-direction:column}
+  .small-metrics{grid-template-columns:repeat(2,1fr);margin-top:14px}
+}
+
+/* light interactive states */
+.search-form button:hover{filter:brightness(1.05)}
+.daily-item:hover,.hourly-item:hover{transform:translateY(-4px);transition:transform .15s ease}
+
+/* accessibility: focus states */
+.search-form input:focus,.search-form button:focus,#units:focus{outline:2px solid rgba(85,97,255,0.25);outline-offset:2px}
+
+/* Custom select (visible replacement for #hourly-day-select) */
+.custom-select{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap:8px;
+  background: rgba(255,255,255,0.03);
+  color: var(--text);
+  border:1px solid rgba(255,255,255,0.06);
+  padding:6px 12px;
+  border-radius:8px;
+  cursor:pointer;
+  min-width:180px;
+}
+.custom-select:focus{outline:none;box-shadow:0 0 0 4px rgba(85,97,255,0.12)}
+.custom-select-label{flex:1}
+.custom-select-arrow{font-size:12px;opacity:0.9}
+.custom-select-list{
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: linear-gradient(180deg, rgba(6,6,11,0.98), rgba(8,10,18,0.98));
+  color: var(--text);
+  border-radius:10px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.6);
+  margin:0;padding:8px 6px;list-style:none;z-index:40;max-height:240px;overflow:auto
+}
+.custom-select-list li{
+  padding:8px 12px;border-radius:6px;color:var(--text);cursor:pointer
+}
+.custom-select-list li[aria-selected="true"],.custom-select-list li:hover{background:rgba(255,255,255,0.06)}
+
+/* Small variant for header units control */
+.custom-select-small{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap:8px;
+  background: rgba(255,255,255,0.03);
+  color: var(--text);
+  border:1px solid rgba(255,255,255,0.06);
+  padding:8px 12px;
+  border-radius:10px;
+  cursor:pointer;
+  min-width:200px;
+  font-size:13px;
+}
+.custom-select-small .custom-select-arrow{font-size:12px}
+.custom-select-small .custom-select-list{top:calc(100% + 8px);right:auto;left:0;min-width:100%;}
