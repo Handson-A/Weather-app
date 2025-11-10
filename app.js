@@ -137,8 +137,9 @@ async function fetchAndRender(lat, lon, placeName = null, country = null) {
     latitude: lat,
     longitude: lon,
     current_weather: 'true',
-    hourly: 'temperature_2m,precipitation,relativehumidity_2m,windspeed_10m',
-    daily: 'temperature_2m_max,temperature_2m_min,precipitation_sum',
+  hourly: 'temperature_2m,precipitation,relativehumidity_2m,windspeed_10m',
+  // include daily weathercode so we can render accurate icons per day
+  daily: 'temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode',
     timezone: 'auto'
   });
 
@@ -253,22 +254,48 @@ function renderCurrent(data, units) {
 function renderDaily(data, units) {
   const container = document.getElementById('daily');
   container.innerHTML = '';
-  const times = data.daily.time;
+  const times = data.daily.time || [];
   for (let i = 0; i < times.length; i++) {
     const day = times[i];
-    const tmax = data.daily.temperature_2m_max[i];
-    const tmin = data.daily.temperature_2m_min[i];
-    const precip = data.daily.precipitation_sum[i];
+    const tmax = data.daily.temperature_2m_max ? data.daily.temperature_2m_max[i] : null;
+    const tmin = data.daily.temperature_2m_min ? data.daily.temperature_2m_min[i] : null;
+    const precip = data.daily.precipitation_sum ? data.daily.precipitation_sum[i] : null;
+    // prefer daily.weathercode (if provided by API); fall back to current_weather code if missing
+    const code = data.daily.weathercode && data.daily.weathercode[i] != null ? data.daily.weathercode[i] : (data.current_weather && data.current_weather.weathercode ? data.current_weather.weathercode : 0);
     const el = document.createElement('div');
     el.className = 'daily-item';
     el.setAttribute('role','listitem');
+    // add a tooltip description element for hover/focus
+    const tooltipId = `daily-tooltip-${i}`;
+    el.tabIndex = 0; // make focusable for keyboard users
+    el.setAttribute('aria-describedby', tooltipId);
     el.innerHTML = `
       <div class="daily-day">${new Date(day).toLocaleDateString(undefined,{weekday:'short'})}</div>
-      <div class="daily-icon">${weatherCodeToEmoji(0)}</div>
-      <div class="daily-temps">${formatTemp(tmax, units)} / ${formatTemp(tmin, units)}</div>
+      <div class="daily-icon">${weatherCodeToEmoji(code)}</div>
+      <div class="daily-temps">${tmax != null ? formatTemp(tmax, units) : '—'} / ${tmin != null ? formatTemp(tmin, units) : '—'}</div>
+      <div class="daily-tooltip" id="${tooltipId}" role="tooltip">${weatherCodeToLabel(code)}</div>
     `;
     container.appendChild(el);
   }
+}
+
+// Return a short textual label for a WMO weather code
+function weatherCodeToLabel(code) {
+  if (code === 0) return 'Clear sky';
+  if (code === 1) return 'Mainly clear';
+  if (code === 2) return 'Partly cloudy';
+  if (code === 3) return 'Overcast';
+  if (code === 45 || code === 48) return 'Fog';
+  if (code === 51 || code === 53 || code === 55) return 'Drizzle';
+  if (code === 56 || code === 57) return 'Freezing drizzle';
+  if (code === 61 || code === 63 || code === 65) return 'Rain';
+  if (code === 66 || code === 67) return 'Freezing rain';
+  if (code === 71 || code === 73 || code === 75) return 'Snow';
+  if (code === 77) return 'Snow grains';
+  if (code === 80 || code === 81 || code === 82) return 'Showers';
+  if (code === 85 || code === 86) return 'Snow showers';
+  if (code === 95 || code === 96 || code === 99) return 'Thunderstorm';
+  return 'Cloudy';
 }
 
 // Find the index in an array of ISO timestamps closest to the target ISO timestamp
