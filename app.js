@@ -12,8 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   unitsSelect.addEventListener('change', () => {
     localStorage.setItem('weather_units', unitsSelect.value);
-    //refresh it
-    const loc = document.getElementById('current-location').dataset.coords;
+    //refresh
+     const loc = document.getElementById('current-location').dataset.coords;
     if (loc) {
       const [lat, lon] = loc.split(',');
       fetchAndRender(lat, lon);
@@ -75,6 +75,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function debounce(fn, wait = 250) {
+    let t = null;
+    return function (...args) {
+      clearTimeout(t);
+      t = setTimeout(() => fn.apply(this, args), wait);
+    };
+  }
+
+  // Autocompleter
+  q.addEventListener('input', debounce(async (e) => {
+    const val = (e.target.value || '').trim();
+    const resultsContainer = document.getElementById('search-results');
+    if (!val || val.length < 2) {
+      // hide suggestions/no-results for short queries
+      if (resultsContainer) resultsContainer.hidden = true;
+      document.getElementById('no-results').hidden = true;
+      return;
+    }
+    try {
+      const suggestions = await geocode(val, 6);
+      renderSearchResults(suggestions, true);
+    } catch (err) {
+      console.warn('autocomplete geocode failed', err);
+    }
+  }, 300));
+
+  // keyboard support: when pressing ArrowDown on the input, focus first suggestion
+  q.addEventListener('keydown', (ev) => {
+    if (ev.key === 'ArrowDown') {
+      const first = document.querySelector('.search-results-list li');
+      if (first) { ev.preventDefault(); first.focus(); }
+    }
+  });
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = q.value.trim();
@@ -82,14 +116,20 @@ document.addEventListener('DOMContentLoaded', () => {
     form.querySelector('button').disabled = true;
     form.querySelector('button').textContent = 'Searching...';
     try {
-      const geo = await geocode(name);
-      if (!geo) {
-        alert('No location found');
-      } else {
-        const {latitude, longitude, name: placeName, country} = geo;
-        document.getElementById('current-location').textContent = `${placeName}, ${country}`;
+      const geoResults = await geocode(name);
+
+      if (!geoResults || geoResults.length === 0) {
+        renderSearchResults([]);
+      } else if (geoResults.length === 1) {
+        const g = geoResults[0];
+        const {latitude, longitude, name: placeName, country} = g;
+        document.getElementById('current-location').textContent = `${placeName}${country ? ', ' + country : ''}`;
         document.getElementById('current-location').dataset.coords = `${latitude},${longitude}`;
+        renderSearchResults([]);
         await fetchAndRender(latitude, longitude, placeName, country);
+      } else {
+    
+        renderSearchResults(geoResults);
       }
     } catch (err) {
       console.error(err);
@@ -120,13 +160,61 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 });
 
-async function geocode(name) {
-  const url = geoBase + encodeURIComponent(name);
+async function geocode(name, limit = 5) {
+  // request a limited number of results for autocomplete
+  const url = geoBase + encodeURIComponent(name) + `&count=${encodeURIComponent(limit)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error('Geocoding failed');
   const data = await res.json();
+  if (!data) return [];
+  if (Array.isArray(data.results)) return data.results;
+  return [];
+}
 
-  return data && data.results && data.results[0];
+// Render a clickable list of geocoding results under the search box
+function renderSearchResults(results, showSingle = false) {
+  const container = document.getElementById('search-results');
+  const noResultsEl = document.getElementById('no-results');
+  if (!container || !noResultsEl) return;
+  container.innerHTML = '';
+  noResultsEl.hidden = true; noResultsEl.setAttribute('aria-hidden','true');
+  if (!results || results.length === 0) {
+    container.hidden = true;
+    noResultsEl.hidden = false; noResultsEl.setAttribute('aria-hidden','false');
+    return;
+  }
+
+  if (results.length === 1 && !showSingle) {
+    container.hidden = true;
+    return;
+  }
+
+  container.hidden = false;
+  const ul = document.createElement('ul');
+  ul.className = 'search-results-list';
+  results.forEach(r => {
+    const li = document.createElement('li');
+    li.className = 'search-result-item';
+    li.tabIndex = 0;
+    const label = `${r.name}${r.admin1 ? ', ' + r.admin1 : ''}${r.country ? ', ' + r.country : ''}`;
+    li.textContent = label;
+    li.dataset.lat = r.latitude;
+    li.dataset.lon = r.longitude;
+    li.dataset.name = r.name;
+    li.dataset.country = r.country || '';
+    li.addEventListener('click', async () => {
+      document.getElementById('current-location').textContent = label;
+      document.getElementById('current-location').dataset.coords = `${r.latitude},${r.longitude}`;
+      container.hidden = true;
+      await fetchAndRender(r.latitude, r.longitude, r.name, r.country);
+    });
+    li.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') li.click(); });
+    ul.appendChild(li);
+  });
+  container.appendChild(ul);
+  // clicking outside should hide results
+  const clickAway = (e) => { if (!container.contains(e.target) && e.target.id !== 'q') { container.hidden = true; document.removeEventListener('click', clickAway); } };
+  document.addEventListener('click', clickAway);
 }
 
 async function fetchAndRender(lat, lon, placeName = null, country = null) {
@@ -137,10 +225,14 @@ async function fetchAndRender(lat, lon, placeName = null, country = null) {
     latitude: lat,
     longitude: lon,
     current_weather: 'true',
-  hourly: 'temperature_2m,precipitation,relativehumidity_2m,windspeed_10m',
+  hourly: 'temperature_2m,precipitation,relativehumidity_2m,windspeed_10m,weathercode',
   // include daily weathercode so we can render accurate icons per day
   daily: 'temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode',
-    timezone: 'auto'
+    timezone: 'auto',
+    // request metric units from API so internal calculations (feels-like, conversions) are consistent
+    temperature_unit: 'celsius',
+    windspeed_unit: 'kmh',
+    precipitation_unit: 'mm'
   });
 
   const url = `${weatherBase}?${params.toString()}`;
@@ -443,12 +535,14 @@ function renderHourlyForSelectedDay(data, units) {
       const hourLabel = new Date(t).toLocaleTimeString(undefined,{hour:'numeric',hour12:true});
       const temp = data.hourly.temperature_2m[idx];
       const precip = data.hourly.precipitation[idx];
+      const hourCode = data.hourly.weathercode && data.hourly.weathercode[idx] != null ? data.hourly.weathercode[idx] : null;
       const item = document.createElement('div');
       item.className = 'hourly-item';
       item.setAttribute('role','listitem');
       item.innerHTML = `
         <div class="hour-left">
           <div class="hour-time">${hourLabel}</div>
+          <div class="hour-icon">${hourCode != null ? weatherCodeToEmoji(hourCode) : ''}</div>
         </div>
         <div class="hour-right">
           <div class="hour-temp">${formatTemp(temp, units)}</div>
