@@ -6,9 +6,9 @@
 
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/images/favicon-32x32.png">
   
-  <title>Frontend Mentor | Weather app</title>
+  <title>Frontend Mentor - Weather app</title>
 
-  <!-- Feel free to remove these styles or customise in your own stylesheet 👍 -->
+  <link rel="stylesheet" href="styles.css">
   <style>
     .attribution { font-size: 11px; text-align: center; }
     .attribution a { color: hsl(228, 45%, 44%); }
@@ -16,51 +16,86 @@
 </head>
 <body>
 
-  Units
+</head>
+<body>
 
-  Switch to Imperial/Metric
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <img src="./assets/images/favicon-32x32.png" alt="Weather logo" width="28" height="28">
+        <span class="brand-name">Weather Now</span>
+      </div>
 
-  Temperature
+      <div class="controls">
+        <label for="units" class="visually-hidden">Units</label>
+        <select id="units" aria-label="Choose units">
+          <option value="metric">Metric (°C, km/h, mm)</option>
+          <option value="imperial">Imperial (°F, mph, in)</option>
+        </select>
+      </div>
+    </div>
+  </header>
 
-  Celsius (°C)
-  Fahrenheit (°F)
+  <main class="container main-grid">
+    <section class="search-section">
+      <h1 class="page-title">How's the sky looking today?</h1>
 
-  Wind Speed
+      <form id="search-form" class="search-form" aria-label="Search for a city">
+        <label for="q" class="visually-hidden">Search for a city</label>
+        <input id="q" name="q" type="search" placeholder="Search for a place, e.g., Tamale, Ghana" required>
+        <button type="submit">Search</button>
+      </form>
 
-  km/h
-  mph
+      <div class="weather-card" id="current-card" aria-live="polite">
+        <div class="current-left">
+          <div class="location" id="current-location">—
+            <span id="location-loader" class="location-loader" aria-hidden="true" title="Locating" hidden></span>
+          </div>
+          <div class="current-date" id="current-date">—</div>
+          <div class="current-metrics">
+            <div class="temp" id="current-temp">—</div>
+            <div class="icon" id="current-icon" aria-hidden="true">☀️</div>
+          </div>
+        </div>
 
-  Precipitation
+        <div class="current-right">
+          <div class="small-metrics">
+            <div><strong>Feels like</strong><div id="feels-like">—</div></div>
+            <div><strong>Humidity</strong><div id="humidity">—</div></div>
+            <div><strong>Wind</strong><div id="wind">—</div></div>
+            <div><strong>Precipitation</strong><div id="precipitation">—</div></div>
+          </div>
+        </div>
+      </div>
 
-  Millimeters (mm)
-  Inches (in)
+      <section class="daily-forecast">
+        <h2>Daily forecast</h2>
+        <div id="daily" class="daily-grid" role="list">
+          <!--to be populated-->
+        </div>
+      </section>
+    </section>
 
-  How's the sky looking today?
+    <aside class="hourly-aside">
+      <div class="hourly-header">
+        <h2>Hourly forecast</h2>
+        <select id="hourly-day-select" aria-label="Select day for hourly forecast"></select>
+      </div>
 
-  Search for a city, e.g., New York
-  Search
+      <div id="hourly" class="hourly-list" role="list">
+        <!-- to be populated-->
+      </div>
+    </aside>
+  </main>
 
-  Feels like
-  <!-- Insert temperature here -->
+  <footer class="attribution">
+    Challenge by <a href="https://www.frontendmentor.io?ref=challenge">Frontend Mentor</a>.
+    Coded by <a href="#">Ayelson</a>.
+  </footer>
 
-  Humidity
-  <!-- Insert humidity here -->
-
-  Wind
-  <!-- Insert wind here -->   
-  
-  Precipitation
-  <!-- Insert precipitation here -->
-
-  Daily forecast
-  <!-- Insert daily forecast for the next 7 days here -->
-
-  Hourly forecast
-  <!-- Insert hourly forecast for the selected day here -->
-
-  <div class="attribution">
-    Challenge by <a href="https://www.frontendmentor.io?ref=challenge">Frontend Mentor</a>. 
-    Coded by <a href="#">Your Name Here</a>.
-  </div>
+  <script src="app.js" defer></script>
+</body>
+</html>
+</html>
 </body>
 </html>
