@@ -179,12 +179,14 @@ function renderCurrent(data, units) {
   dateEl.textContent = new Date(cur.time).toLocaleString();
 
   // find index of current time 
-  const idx = data.hourly.time.indexOf(cur.time);
-  const humidity = idx >= 0 ? data.hourly.relativehumidity_2m[idx] : null;
-  const precipitation = idx >= 0 ? data.hourly.precipitation[idx] : null;
-  const wind = cur.windspeed; // default units: km/h 
+  // find the closest hourly index to the current time 
+  const idx = findClosestIndex(data.hourly.time, cur.time);
+  const humidity = idx >= 0 && data.hourly.relativehumidity_2m ? data.hourly.relativehumidity_2m[idx] : null;
+  const precipitation = idx >= 0 && data.hourly.precipitation ? data.hourly.precipitation[idx] : null;
 
-  feelsEl.textContent = formatTemp(approxFeelsLike(cur.temperature, humidity), units);
+  const wind = idx >= 0 && data.hourly.windspeed_10m ? data.hourly.windspeed_10m[idx] : (cur.windspeed || null);
+
+  feelsEl.textContent = formatTemp(computeFeelsLike(cur.temperature, humidity, wind), units);
   humEl.textContent = humidity !== null ? `${Math.round(humidity)}%` : '—';
   windEl.textContent = wind !== null ? formatWind(wind, units) : '—';
   precipEl.textContent = precipitation !== null ? formatPrecip(precipitation, units) : '—';
@@ -209,6 +211,22 @@ function renderDaily(data, units) {
     `;
     container.appendChild(el);
   }
+}
+
+// Find the index in an array of ISO timestamps closest to the target ISO timestamp
+function findClosestIndex(timeArray, targetIso) {
+  if (!Array.isArray(timeArray) || timeArray.length === 0 || !targetIso) return -1;
+  const target = Date.parse(targetIso);
+  if (Number.isNaN(target)) return -1;
+  let bestIdx = -1;
+  let bestDiff = Infinity;
+  for (let i = 0; i < timeArray.length; i++) {
+    const t = Date.parse(timeArray[i]);
+    if (Number.isNaN(t)) continue;
+    const diff = Math.abs(t - target);
+    if (diff < bestDiff) { bestDiff = diff; bestIdx = i; }
+  }
+  return bestIdx;
 }
 
 function setupHourlyDaySelector(data) {
@@ -262,26 +280,68 @@ function formatWind(kmh, units){
   return `${Math.round(kmh)} km/h`;
 }
 function formatPrecip(mm, units){
+  if (mm == null) return '—';
   if (units === 'imperial') return `${(mm * 0.0393701).toFixed(2)} in`;
-  return `${mm} mm`;
+  // show one decimal for mm when fractional, else integer
+  return (Math.round(mm) === mm) ? `${mm} mm` : `${mm.toFixed(1)} mm`;
 }
 
-function approxFeelsLike(tempC, humidity){
-  //use temp if humidity missing
-  if (humidity == null) return tempC;
-  // simple adjustment
-  const adj = (humidity - 50) * 0.02; 
-  return tempC + adj;
+// Compute realistic 'feels like' temperature.
+// Uses Wind Chill when cold and windy, Heat Index when hot and humid, otherwise returns air temp.
+function computeFeelsLike(tempC, humidity, windKmh) {
+  // if humidity or wind are missing, return raw temp
+  if (tempC == null) return null;
+  const t = Number(tempC);
+  const rh = humidity == null ? null : Number(humidity);
+  const w = windKmh == null ? null : Number(windKmh);
+
+  // Wind Chill (valid for <=10°C and wind > 4.8 km/h)
+  if (t <= 10 && w !== null && w > 4.8) {
+    const v = w;
+    // Canadian wind chill formula (°C)
+    const wc = 13.12 + 0.6215 * t - 11.37 * Math.pow(v, 0.16) + 0.3965 * t * Math.pow(v, 0.16);
+    return Math.round(wc*10)/10;
+  }
+
+  // Heat Index (approx) - use when >=27°C and humidity present
+  if (t >= 27 && rh !== null) {
+    // formula uses °F
+    const T = t * 9/5 + 32;
+    const R = rh;
+    // Rothfusz regression
+    let HI = -42.379 + 2.04901523 * T + 10.14333127 * R - 0.22475541 * T * R - 0.00683783 * T * T - 0.05481717 * R * R + 0.00122874 * T * T * R + 0.00085282 * T * R * R - 0.00000199 * T * T * R * R;
+    // adjustment
+    if (R < 13 && T >= 80 && T <= 112) {
+      HI -= ((13 - R) / 4) * Math.sqrt((17 - Math.abs(T - 95)) / 17);
+    } else if (R > 85 && T >= 80 && T <= 87) {
+      HI += ((R - 85) / 10) * ((87 - T) / 5);
+    }
+    // convert back to °C
+    const hic = (HI - 32) * 5/9;
+    return Math.round(hic*10)/10;
+  }
+
+  // otherwise return temperature unchanged (rounded to 1 decimal)
+  return Math.round(t*10)/10;
 }
 
 function weatherCodeToEmoji(code){
-//example mapping
-  if (code === 0) return '☀️';
-  if (code <= 3) return '⛅';
-  if (code <= 48) return '🌫️';
-  if (code <= 67) return '🌧️';
-  if (code <= 77) return '🌨️';
-  if (code <= 82) return '⛈️';
+  // Map WMO weather codes (from Open-Meteo) to emoji: quick display.
+  // Reference: https://open-meteo.com/en/docs#api_form
+  if (code === 0) return '☀️'; // clear sky
+  if (code === 1) return '🌤️'; // mainly clear
+  if (code === 2) return '⛅'; // partly cloudy
+  if (code === 3) return '☁️'; // overcast
+  if (code === 45 || code === 48) return '🌫️'; // fog
+  if (code === 51 || code === 53 || code === 55) return '🌦️'; // drizzle
+  if (code === 56 || code === 57) return '🌧️'; // freezing drizzle
+  if (code === 61 || code === 63 || code === 65) return '🌧️'; // rain
+  if (code === 66 || code === 67) return '🌧️'; // freezing rain
+  if (code === 71 || code === 73 || code === 75) return '🌨️'; // snow
+  if (code === 77) return '🌨️'; // snow grains
+  if (code === 80 || code === 81 || code === 82) return '⛈️'; // showers
+  if (code === 85 || code === 86) return '🌨️'; // snow showers
+  if (code === 95 || code === 96 || code === 99) return '⛈️'; // thunderstorm
   return '☁️';
 }
 
