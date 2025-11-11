@@ -160,6 +160,15 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 });
 
+// Register service worker for PWA/offline support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('ServiceWorker registered', reg))
+      .catch(err => console.warn('ServiceWorker registration failed', err));
+  });
+}
+
 async function geocode(name, limit = 5) {
   // request a limited number of results for autocomplete
   const url = geoBase + encodeURIComponent(name) + `&count=${encodeURIComponent(limit)}`;
